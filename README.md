@@ -39,6 +39,7 @@ Brief, and possibly incomplete at this point:
 * Detection of when someone mails for someone else
 * Keyword detection to display icons (irc, cell, etc, become icons irc nick/number)
 * Reply catching/threading
+* Search function
 
 Novelty:
 * Heatmap on calendar views

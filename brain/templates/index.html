@@ -1,0 +1,79 @@
+<!--
+# WasWhereWhen is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Libravatar is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with WasWhereWhen.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<html>
+<head>
+{%block stylesheet %}
+    <style type="text/css">
+        table {
+          width: 100%;
+	  height: 100%;
+          border:3px solid darkred;
+        }
+        th {
+          background-color:#ccc;
+        }
+        th.month {
+          background-color: darkred;
+          color: #fff;
+        }
+        th.month a {
+          color:#fff;
+        }
+        td {
+          width:14%;
+          text-align:center;
+          padding: 5px;
+        }
+        td.sun, td.sat {
+          background-color:eee;
+        }
+        td.today {
+          border:1px solid darkred;
+        }
+        td.headers {
+          border:1px solid darkred;
+          text-align: left;
+        }
+        td.what {
+          border:1px solid darkred;
+          padding-bottom: 20px;
+          text-align: left;
+          width: 70%;
+        }
+        .singleday td {
+          text-align: left;
+          vertical-align: top;
+        }
+        p.subject{
+          font-weight:bold;
+        }
+        .nounder {
+          text-decoration:none;
+        }
+    </style>
+{% endblock stylesheet%}
+</head>
+<body>
+{% if dayCal %}
+{{dayCal|safe}}
+{% endif %}
+{% if monthCal %}
+{{ monthCal|safe }}
+{% endif %}
+{% if yearCal %}
+{{ yearCal|safe }}
+{% endif %}
+</body>
+</html>

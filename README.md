@@ -20,17 +20,17 @@ WasWhereWhen - Whereis mailing list mbox formatter
 Brief, and possibly incomplete at this point:
 
 * Install django as per your operating system's instructions
-  (eg, for ubuntu/debian: sudo apt-get install python-django)
+  (eg, for ubuntu/debian: `sudo apt-get install python-django`)
 * Get the Libravatar python module
   (eg, `sudo pip install pyLibravatar` or `sudo apt-get instal python-libravatar`)
 * Clone this repository into a directory somewhere
 * Setup Mailman to output weekly archives with the file format like:
-  <yourmailmanlisturl>Week-of-Mon-20120716.txt
+  `<yourmailmanlisturl>Week-of-Mon-20120716.txt`
 * Set up your settings.py as per any other django site
 * To the bottom of your settings.py, add the <yourmailmanlisturl> portion
   of the above url format. Remember the trailing slash!
 * If you don't want this in debug mode, make that change to settings.py
-* python manage.py runserver ip.addr.of.choice:port
+* `python manage.py runserver ip.addr.of.choice:port`
 
 
 

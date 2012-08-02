@@ -169,13 +169,19 @@ def singleday(year, month, day):
     dayname = d.weekday()
     mboxlist = mbox(d, dayname)
 
+    yesterday = d - timedelta(1)
+    yesterday = yesterday.strftime("%Y/%m/%d")
+    tomorrow = d + timedelta(1)
+    tomorrow = tomorrow.strftime("%Y/%m/%d")
+    d = d.strftime("%A, %B %d, %Y")
+
     if mboxlist == False:
-        return '<table><tr><th><h1>This date does not appear to be in the mail archive. It either pre-dates it, or has not happened yet</th></tr></h1>'
+        return '<table><tr><th><h1>This date does not appear to be in the mail archive. It either pre-dates it, or has not happened yet</th></tr></h1> '
 
     v = []
     a = v.append
     a('<table class="singleday">')
-    a('<tr><th colspan="2">%s</th></tr>' % d)
+    a('<tr><th colspan="2"><a class="nounder" href="/%s"><</a>&nbsp;%s&nbsp;<a class="nounder" href="/%s">></a></th></tr>' % (yesterday, d, tomorrow))
 
     for mboxmail in mboxlist:
         avatar_url = libravatar_url(mboxmail['From'])

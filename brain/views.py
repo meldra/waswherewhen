@@ -28,7 +28,6 @@ from cStringIO import StringIO
 from gzip import GzipFile
 from libravatar import libravatar_url
 
-now = datetime.now()
 withyear = False
 
 def parse_mbox(message):
@@ -153,6 +152,8 @@ class WhereisCalendar(HTMLCalendar):
         return '<tr>%s</tr>' % s
 
     def formatday(self, day, weekday, month, year):
+        now = datetime.now()
+
         if day == now.day and month == now.month and year == now.year:
             today = 'today '
         else:
@@ -192,6 +193,8 @@ def singleday(year, month, day):
     return '\n'.join(v)
 
 def index(request, year=0, month=0, day=0):
+    now = datetime.now()
+
     cal = WhereisCalendar(calendar.SUNDAY)
     day = int(day)
     month = int(month)

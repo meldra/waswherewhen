@@ -22,7 +22,7 @@ Brief, and possibly incomplete at this point:
 * Install django as per your operating system's instructions
   (eg, for ubuntu/debian: sudo apt-get install python-django)
 * Get the Libravatar python module
-  (eg, sudo easy_install pyLibravatar)
+  (eg, `sudo pip install pyLibravatar` or `sudo apt-get instal python-libravatar`)
 * Clone this repository into a directory somewhere
 * Setup Mailman to output weekly archives with the file format like:
   <yourmailmanlisturl>Week-of-Mon-20120716.txt

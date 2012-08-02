@@ -198,11 +198,12 @@ def index(request, year=0, month=0, day=0):
     year = int(year)
     days = False
 
-    if month > 0 and year > 0:
+    if month > 0 and month <= 12 and year > 0:
         days = calendar.monthrange(year, month)
-    if days != False and day > 0 and day <= days[1]:
+
+    if days and day > 0 and day <= days[1]:
         dayCal = singleday(year, month, day)
-    elif month > 0 and month <= 12:
+    elif month > 0 and month <=12:
         monthCal = cal.formatmonth(year, month)
         nextmonth = month+1
         prevmonth = month-1

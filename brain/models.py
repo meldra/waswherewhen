@@ -14,8 +14,12 @@
 from django.db import models
 
 class Person(models.Model):
-    individual = models.CharField(max_length=128)
+    individual = models.CharField(max_length=128, primary_key=True)
 
 class Alias(models.Model):
     person = models.ForeignKey(Person)
     alias = models.CharField(max_length=64)
+    type = models.CharField(max_length=10)
+    class Meta:
+        unique_together = ("person", "alias")
+        unique_together = ("person", "type")

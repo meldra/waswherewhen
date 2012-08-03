@@ -14,6 +14,8 @@
 from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import Template
+from brain.models import Person, Alias
+
 from datetime import date, datetime, timedelta, time
 from dateutil.relativedelta import MO
 from dateutil.rrule import rrule,DAILY
@@ -27,8 +29,11 @@ import urllib2
 from cStringIO import StringIO
 from gzip import GzipFile
 from libravatar import libravatar_url
+import simplejson
+import re
 
 withyear = False
+aliascachetimer = date.today()
 
 def parse_mbox(message):
     if message.is_multipart():
@@ -164,6 +169,61 @@ class WhereisCalendar(HTMLCalendar):
         else:
             return '<td class="%s%s"><a href="/%s/%s/%s">%d</a></td>' % (today, self.cssclasses[weekday], year, month, day, day)
 
+def gettags(email, body):
+
+    irc = mobile = home = False
+
+    if body.lower().find('irc') > 0:
+        irc = True;
+
+    if body.lower().find('mobile') > 0:
+        mobile = True;
+
+    if body.lower().find('cell') > 0:
+        mobile = True;
+
+    if body.lower().find('home phone') > 0:
+        home = True;
+
+    if body.lower().find('landline') > 0:
+        home = True;
+
+    tags = []
+    t = tags.append
+    t('email: %s' % email)
+
+    if irc:
+        try:
+            nick = Alias.objects.filter( person = email, type = 'irc_nick')
+            t('irc: %s' % nick[0].alias)
+        except:
+            irc = False
+
+    if mobile:
+        try:
+            mobile = Alias.objects.filter( person = email, type = 'mobile')
+            t('mobile: %s' % mobile[0].alias)
+        except:
+            mobile = False
+
+    if len(tags) == 0:
+        return False
+
+    return tags
+
+def taghilight(body):
+
+    words = ['IRC', 'Irc', 'irc', 'Email', 'email', 'Cell', 'cell', 'Mobile', 'mobile', 'home phone', 'landline']
+
+    for w in words:
+        body = re.sub(
+            re.escape(w),
+            ur'<span class="hilight">\g<0></span>',
+            body,
+            flags=re.IGNORECASE)
+
+    return body
+
 def singleday(year, month, day):
     d = date(year, month, day)
     dateformatted = d.strftime('%b %d %Y');
@@ -186,14 +246,90 @@ def singleday(year, month, day):
 
     for mboxmail in mboxlist:
         avatar_url = libravatar_url(mboxmail['From'])
-        a('<tr><td class="headers"><p class="subject">%s</p><p>%s</p><img src="%s"><p>%s</p></td><td class="what">%s</td></tr>' % (mboxmail['Subject'], mboxmail['From'], avatar_url, mboxmail['Date'], mboxmail['Body']))
+
+        try:
+            tagstring = gettags(mboxmail['From'], mboxmail['Body'])
+            tagstring = ' | '.join(tagstring)
+        except:
+            tagstring = ''
+
+        a('<tr><td class="headers"><p class="subject">%s</p><p>%s</p><img src="%s"><p>%s</p></td><td class="what">%s<br/><br/>%s</td></tr>' % (mboxmail['Subject'], mboxmail['From'], avatar_url, mboxmail['Date'], taghilight(mboxmail['Body']), tagstring))
 
     a('</table>')
 
     return '\n'.join(v)
 
+def resyncaliases():
+
+    try:
+        response = urllib2.urlopen(settings.DIRECTORY_JSON)
+    except:
+        response = False
+
+    if response != False:
+        json = simplejson.load(response)
+
+    for j in json:
+        person = Person.objects.get_or_create(individual = j['email'])
+
+        if j['first_name']:
+            try:
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['first_name'], type = 'first_name')
+            except:
+                alias = Alias.objects.get(person = j['email'], type = 'first_name')
+                alias.alias = j['first_name']
+                alias.save()
+
+        if j['surname']:
+            surname_initial = '%s%s' % (j['first_name'], j['surname'][0:1])
+            surname_initial_space = '%s %s' % (j['first_name'], j['surname'][0:1])
+
+            try:
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = surname_initial, type = 'surname')
+            except:
+                alias = Alias.objects.get(person = j['email'], type = 'surname')
+                alias.alias = surname_initial
+                alias.save()
+
+            try:
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = surname_initial_space, type = 'surnamesp')
+            except:
+                alias = Alias.objects.get(person = j['email'], type = 'surnamesp')
+                alias.alias = surname_initial_space
+                alias.save()
+
+        if j['irc_nick']:
+            try:
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['irc_nick'], type = 'irc_nick')
+            except:
+                alias = Alias.objects.get(person = j['email'], type = 'first_name')
+                alias.alias = j['irc_nick']
+                alias.save()
+
+        if j['mobile']:
+            try:
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['mobile'], type = 'mobile')
+            except:
+                alias = Alias.objects.get(person = j['email'], type = 'first_name')
+                alias.alias = j['mobile']
+                alias.save()
+
+        if j['home']:
+            try:
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['home'], type = 'home')
+            except:
+                alias = Alias.objects.get(person = j['email'], type = 'first_name')
+                alias.alias = j['home']
+                alias.save()
+
+    return date.today()
+
 def index(request, year=0, month=0, day=0):
     now = datetime.now()
+    global aliascachetimer
+
+    if settings.DIRECTORY_JSON and aliascachetimer < date.today():
+        aliascachetimer = resyncaliases()
 
     cal = WhereisCalendar(calendar.SUNDAY)
     day = int(day)

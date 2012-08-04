@@ -14,8 +14,9 @@
 from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import Template
+from django.utils.html import escape
+from django.db import connection
 from brain.models import Person, Alias
-
 from datetime import date, datetime, timedelta, time
 from dateutil.relativedelta import MO
 from dateutil.rrule import rrule,DAILY
@@ -40,7 +41,9 @@ def parse_mbox(message):
         for part in message.get_payload(): 
             parse_mbox(part)
     else:
-        return message.get_payload(decode=True)
+        body = message.get_payload(decode=True)
+        return escape(body)
+
 
 def mbox(date_obj, weekday):  
 
@@ -75,7 +78,7 @@ def mbox(date_obj, weekday):
         body = parse_mbox(message).replace('\n','<br />\n')
         subject = email.header.decode_header(message['subject'])
         subject = subject[0][0]
-        subject = subject.replace('[Whereis] ', '')
+        subject = escape(subject.replace('[Whereis] ', ''))
         who = message['from'].split('(')
         who = who[0].strip()
         who = who.replace(' at ', '@')
@@ -224,6 +227,32 @@ def taghilight(body):
 
     return body
 
+def getothers(subject, sender):
+
+    subject = ' %s ' % subject
+    cursor = connection.cursor()
+    cursor.execute('with list as '
+                   '(select a.id, a.alias, '
+                   '(select distinct count(*) '
+                   'as cnt from brain_alias a2 where a2.alias = a.alias) '
+                   'as occurs from brain_alias a) '
+                   'select alias from list '
+                   'where occurs = 1;')
+    aliaslist = cursor.fetchall()
+    aliaslist = map(' '.join, aliaslist)
+
+    others = []
+    o = others.append
+
+    for alias in aliaslist:
+        if subject.find(alias) > 0:
+            matchq = Alias.objects.filter( alias = alias )
+            match = matchq[0].person_id
+            if match != sender:
+                o(match)
+
+    return ' '.join(others)
+
 def singleday(year, month, day):
     d = date(year, month, day)
     dateformatted = d.strftime('%b %d %Y');
@@ -245,7 +274,7 @@ def singleday(year, month, day):
     a('<tr><th colspan="2"><a class="nounder" href="/%s"><</a>&nbsp;%s&nbsp;<a class="nounder" href="/%s">></a></th></tr>' % (yesterday, d, tomorrow))
 
     for mboxmail in mboxlist:
-        avatar_url = libravatar_url(mboxmail['From'])
+        avatar_url = libravatar_url(email = mboxmail['From'], size = 150)
 
         try:
             tagstring = gettags(mboxmail['From'], mboxmail['Body'])
@@ -253,7 +282,15 @@ def singleday(year, month, day):
         except:
             tagstring = ''
 
-        a('<tr><td class="headers"><p class="subject">%s</p><p>%s</p><img src="%s"><p>%s</p></td><td class="what">%s<br/><br/>%s</td></tr>' % (mboxmail['Subject'], mboxmail['From'], avatar_url, mboxmail['Date'], taghilight(mboxmail['Body']), tagstring))
+        try:
+            others = getothers(mboxmail['Subject'], mboxmail['From'])
+        except:
+            others = ''
+
+        if len(others) > 0:
+            others = 'Possible mentions:<br/>%s' % others
+
+        a('<tr><td class="headers"><p class="subject">%s</p><img src="%s"><p class="hilight">%s</p><p>%s</p></td><td class="what">%s<br/><br/>%s</td></tr>' % (mboxmail['Subject'], avatar_url, others, mboxmail['Date'], taghilight(mboxmail['Body']), tagstring))
 
     a('</table>')
 

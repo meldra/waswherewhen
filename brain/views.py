@@ -375,7 +375,12 @@ def index(request, year=0, month=0, day=0):
     now = datetime.now()
     global aliascachetimer
 
-    if settings.DIRECTORY_JSON and aliascachetimer < date.today():
+    try:
+        aliascount = Alias.objects.count()
+    except:
+        raise Exception("The db models have not been sync'd yet. Please sync them first.")
+
+    if settings.DIRECTORY_JSON and aliascachetimer < date.today() or settings.DIRECTORY_JSON and aliascount == 0:
         aliascachetimer = resyncaliases()
 
     cal = WhereisCalendar(calendar.SUNDAY)

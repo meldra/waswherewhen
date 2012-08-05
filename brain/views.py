@@ -282,16 +282,20 @@ def singleday(year, month, day):
     for mboxmail in mboxlist:
         avatar_url = libravatar_url(email = mboxmail['From'], size = 150)
 
-        try:
-            tagstring = gettags(mboxmail['From'], mboxmail['Body'])
-            tagstring = ' | '.join(tagstring)
-        except:
-            tagstring = ''
+        if settings.DIRECTORY_JSON:
 
-        try:
-            others = getothers(mboxmail['Subject'], mboxmail['From'])
-        except:
-            others = ''
+            try:
+                tagstring = gettags(mboxmail['From'], mboxmail['Body'])
+                tagstring = ' | '.join(tagstring)
+            except:
+                tagstring = ''
+
+            try:
+                others = getothers(mboxmail['Subject'], mboxmail['From'])
+            except:
+                others = ''
+        else:
+            tagstring = others = ''
 
         if len(others) > 0:
             others = 'Possible mentions:<br/>%s' % others

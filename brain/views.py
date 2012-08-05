@@ -235,7 +235,7 @@ def taghilight(body):
 
 def getothers(subject, sender):
 
-    subject = ' %s ' % subject
+    subject = ' %s ' % subject.lower()
     cursor = connection.cursor()
     cursor.execute('with list as '
                    '(select a.id, a.alias, '
@@ -243,13 +243,12 @@ def getothers(subject, sender):
                    'as cnt from brain_alias a2 where a2.alias = a.alias) '
                    'as occurs from brain_alias a) '
                    'select alias from list '
-                   'where occurs = 1;')
+                   'where occurs = 1 order by length(alias);')
     aliaslist = cursor.fetchall()
     aliaslist = map(' '.join, aliaslist)
 
     others = []
     o = others.append
-
     for alias in aliaslist:
         if subject.find(alias) > 0:
             matchq = Alias.objects.filter( alias = alias )
@@ -321,10 +320,10 @@ def resyncaliases():
 
         if j['first_name']:
             try:
-                alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['first_name'], type = 'first_name')
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['first_name'].lower(), type = 'first_name')
             except:
                 alias = Alias.objects.get(person = j['email'], type = 'first_name')
-                alias.alias = j['first_name']
+                alias.alias = j['first_name'].lower()
                 alias.save()
 
         if j['surname']:
@@ -332,17 +331,17 @@ def resyncaliases():
             surname_initial_space = '%s %s' % (j['first_name'], j['surname'][0:1])
 
             try:
-                alias = Alias.objects.get_or_create(person_id = j['email'], alias = surname_initial, type = 'surname')
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = surname_initial.lower(), type = 'surname')
             except:
                 alias = Alias.objects.get(person = j['email'], type = 'surname')
-                alias.alias = surname_initial
+                alias.alias = surname_initial.lower()
                 alias.save()
 
             try:
-                alias = Alias.objects.get_or_create(person_id = j['email'], alias = surname_initial_space, type = 'surnamesp')
+                alias = Alias.objects.get_or_create(person_id = j['email'], alias = surname_initial_space.lower(), type = 'surnamesp')
             except:
                 alias = Alias.objects.get(person = j['email'], type = 'surnamesp')
-                alias.alias = surname_initial_space
+                alias.alias = surname_initial_space.lower()
                 alias.save()
 
         if j['irc_nick']:

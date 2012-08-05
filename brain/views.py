@@ -17,7 +17,8 @@ from django.shortcuts import render_to_response
 from django.template import Template
 from django.utils.html import escape
 from django.db import connection
-from brain.models import Person, Alias
+from django.core import serializers
+from brain.models import Person, Alias, Archive
 from datetime import date, datetime, timedelta, time
 from dateutil.relativedelta import MO
 from dateutil.rrule import rrule,DAILY
@@ -31,6 +32,17 @@ from libravatar import libravatar_url
 withyear = False
 aliascachetimer = date.today()
 
+def monday(date_obj, weekday):
+    day = datetime.combine(date_obj, time())
+
+    if weekday != 0:
+        rr=rrule(DAILY,byweekday=MO,dtstart=day-timedelta(day.weekday()))
+        past_monday=rr.before(day,inc=False)
+        last_monday = (past_monday.date())
+        return last_monday
+    else:
+        return date_obj
+
 def parse_mbox(message):
     if message.is_multipart():
         for part in message.get_payload(): 
@@ -39,28 +51,19 @@ def parse_mbox(message):
         body = message.get_payload(decode=True)
         return escape(body)
 
+def mbox(date_obj, weekday, reply=True):
 
-def mbox(date_obj, weekday):  
+    mon = monday(date_obj, weekday)
+    mon = 'Week-of-Mon-%s' % mon.strftime("%Y%m%d")
 
-    day = datetime.combine(date_obj, time())
-
-    if weekday != 0:
-        rr=rrule(DAILY,byweekday=MO,dtstart=day-timedelta(day.weekday()))
-
-        past_monday=rr.before(day,inc=False)
-        last_monday = (past_monday.date())
-        monday = 'Week-of-Mon-%s' % last_monday.strftime("%Y%m%d")
-    else:
-        monday = 'Week-of-Mon-%s' % date_obj.strftime("%Y%m%d")
-
-    url = '%s%s.txt.gz' % (settings.MAILMAN_BASEURL, monday)
+    url = '%s%s.txt.gz' % (settings.MAILMAN_BASEURL, mon)
 
     try:
         response = urllib2.urlopen(url)
     except:
         return False
 
-    tmpfile = '/tmp/%s.txt' % monday
+    tmpfile = '/tmp/%s.txt' % mon
     data = response.read()
     unzipped = GzipFile('', 'r', 0, StringIO(data)).read()
     tmp_file = open(tmpfile, 'w')
@@ -80,10 +83,16 @@ def mbox(date_obj, weekday):
         maildate = datetime(*email.utils.parsedate(message['date'])[:6])
         bodyexpl = body.split('--')
 
-        if maildate.strftime('%b %d %Y') == date_obj.strftime('%b %d %Y'):
-            messages.append({'Date': message['date'],'From': who, 'Subject': subject, 'Body': bodyexpl[0]})
+        archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0])
 
-    return messages
+        if reply == True:
+            if maildate.strftime('%b %d %Y') == date_obj.strftime('%b %d %Y'):
+                messages.append({'date': message['date'],'sender': who, 'subject': subject, 'body': bodyexpl[0]})
+
+    if reply == True:
+        return messages
+    else:
+        return True
 
 class WhereisCalendar(HTMLCalendar):
 
@@ -257,12 +266,27 @@ def singleday(year, month, day):
     d = date(year, month, day)
     dateformatted = d.strftime('%b %d %Y');
     dayname = d.weekday()
-    mboxlist = mbox(d, dayname)
-
     yesterday = d - timedelta(1)
     yesterday = yesterday.strftime("%Y/%m/%d")
     tomorrow = d + timedelta(1)
+    nextday = tomorrow;
     tomorrow = tomorrow.strftime("%Y/%m/%d")
+    lastweek = datetime.now() - timedelta(7)
+
+    mboxquerycount = Archive.objects.filter(date__contains=d).count()
+
+    if mboxquerycount < 1:
+        mboxlist = mbox(d, dayname)
+    else:
+        mboxquery = Archive.objects.filter(date__contains=d)
+        jsondata = serializers.serialize('json', mboxquery)
+        rows = simplejson.loads(jsondata)
+
+        mboxlist = []
+        m = mboxlist.append
+        for l in rows:
+            m(l['fields'])
+
     d = d.strftime("%A, %B %d, %Y")
 
     if mboxlist == False:
@@ -274,18 +298,18 @@ def singleday(year, month, day):
     a('<tr><th colspan="2"><a class="nounder" href="/%s"><</a>&nbsp;%s&nbsp;<a class="nounder" href="/%s">></a></th></tr>' % (yesterday, d, tomorrow))
 
     for mboxmail in mboxlist:
-        avatar_url = libravatar_url(email = mboxmail['From'], size = 150)
+        avatar_url = libravatar_url(email = mboxmail['sender'], size = 150)
 
         if settings.DIRECTORY_JSON:
 
             try:
-                tagstring = gettags(mboxmail['From'], mboxmail['Body'])
+                tagstring = gettags(mboxmail['sender'], mboxmail['body'])
                 tagstring = ' | '.join(tagstring)
             except:
                 tagstring = ''
 
             try:
-                others = getothers(mboxmail['Subject'], mboxmail['From'])
+                others = getothers(mboxmail['subject'], mboxmail['sender'])
             except:
                 others = ''
         else:
@@ -294,7 +318,7 @@ def singleday(year, month, day):
         if len(others) > 0:
             others = 'Possible mentions:<br/>%s' % others
 
-        a('<tr><td class="headers"><p class="subject">%s</p><img src="%s"><p class="hilight">%s</p><p>%s</p></td><td class="what">%s<br/><br/>%s</td></tr>' % (mboxmail['Subject'], avatar_url, others, mboxmail['Date'], taghilight(mboxmail['Body']), tagstring))
+        a('<tr><td class="headers"><p class="subject">%s</p><img src="%s"><p class="hilight">%s</p><p>%s</p></td><td class="what">%s<br/><br/>%s</td></tr>' % (mboxmail['subject'], avatar_url, others, mboxmail['date'], taghilight(mboxmail['body']), tagstring))
 
     a('</table>')
 
@@ -364,6 +388,19 @@ def resyncaliases():
                 alias.save()
 
     return date.today()
+
+def syncmbox(year, month, day):
+
+    d = date(year, month, day)
+    dayname = d.weekday()
+
+    while True:
+        d = d - timedelta(7)
+        mbox = mbox(d, dayname, False)
+        if mbox == False:
+            break
+
+    return True
 
 def index(request, year=0, month=0, day=0):
     now = datetime.now()

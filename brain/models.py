@@ -23,3 +23,11 @@ class Alias(models.Model):
     class Meta:
         unique_together = ("person", "alias")
         unique_together = ("person", "type")
+
+class Archive(models.Model):
+    date = models.DateTimeField(auto_now_add=False)
+    sender = models.CharField(max_length=64)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    class Meta:
+        unique_together = ("date", "sender")

@@ -185,6 +185,12 @@ def gettags(email, body):
     if body.lower().find('cell') > 0:
         mobile = True;
 
+    if body.lower().find('text') > 0:
+        mobile = True;
+
+    if body.lower().find('phone') > 0:
+        mobile = True;
+
     if body.lower().find('home phone') > 0:
         home = True;
 
@@ -216,7 +222,7 @@ def gettags(email, body):
 
 def taghilight(body):
 
-    words = ['IRC', 'Irc', 'irc', 'Email', 'email', 'Cell', 'cell', 'Mobile', 'mobile', 'home phone', 'landline']
+    words = ['irc', 'email', 'cell', 'mobile', 'text', 'phone', 'home phone', 'landline']
 
     for w in words:
         body = re.sub(

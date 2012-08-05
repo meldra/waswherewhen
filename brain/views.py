@@ -11,6 +11,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with WasWhereWhen.  If not, see <http://www.gnu.org/licenses/>.
 #
+import calendar, mailbox, email.utils, urllib2, simplejson, re
 from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import Template
@@ -20,18 +21,12 @@ from brain.models import Person, Alias
 from datetime import date, datetime, timedelta, time
 from dateutil.relativedelta import MO
 from dateutil.rrule import rrule,DAILY
-import calendar
 from calendar import HTMLCalendar
 from itertools import groupby
 from django.utils.html import conditional_escape as esc
-import mailbox
-import email.utils
-import urllib2
 from cStringIO import StringIO
 from gzip import GzipFile
 from libravatar import libravatar_url
-import simplejson
-import re
 
 withyear = False
 aliascachetimer = date.today()

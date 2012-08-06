@@ -27,6 +27,7 @@ Brief, and possibly incomplete at this point:
 * Setup Mailman to output weekly archives with the file format like:
   `<yourmailmanlisturl>Week-of-Mon-20120716.txt`
 * Set up your settings.py as per any other django site
+* Add `'brain',` to the apps in the settings.py
 * To the bottom of your settings.py, add the <yourmailmanlisturl> portion
   of the above url format. Remember the trailing slash!
 * If you don't want this in debug mode, make that change to settings.py

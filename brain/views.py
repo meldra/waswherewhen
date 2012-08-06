@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with WasWhereWhen.  If not, see <http://www.gnu.org/licenses/>.
 #
-import calendar, mailbox, email.utils, urllib2, simplejson, re
+import calendar, mailbox, email.utils, urllib2, simplejson, re, djutils.decorators
 from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import Template
@@ -31,6 +31,17 @@ from libravatar import libravatar_url
 
 withyear = False
 aliascachetimer = date.today()
+
+@djutils.decorators.async
+def load_data_async(year, month, day):
+    global aliascachetimer
+    try:
+        aliascount = Alias.objects.count()
+    except:
+        raise Exception("The db models have not been sync'd yet. Please sync them first.")
+    if settings.DIRECTORY_JSON and aliascachetimer < date.today() or settings.DIRECTORY_JSON and aliascount == 0:
+        aliascachetimer = resyncaliases()
+    syncmbox(year, month, day)
 
 def monday(date_obj, weekday):
     day = datetime.combine(date_obj, time())
@@ -410,30 +421,26 @@ def syncmbox(year, month, day):
     dayname = d.weekday()
 
     while True:
+        syncmbox = mbox(d, dayname, False)
         d = d - timedelta(7)
-        mbox = mbox(d, dayname, False)
-        if mbox == False:
+        if syncmbox == False:
             break
 
     return True
 
 def index(request, year=0, month=0, day=0):
     now = datetime.now()
-    global aliascachetimer
-
-    try:
-        aliascount = Alias.objects.count()
-    except:
-        raise Exception("The db models have not been sync'd yet. Please sync them first.")
-
-    if settings.DIRECTORY_JSON and aliascachetimer < date.today() or settings.DIRECTORY_JSON and aliascount == 0:
-        aliascachetimer = resyncaliases()
 
     cal = WhereisCalendar(calendar.SUNDAY)
     day = int(day)
     month = int(month)
     year = int(year)
     days = False
+
+    try:
+        load_data_async(year, month, day)
+    except:
+        raise
 
     if month > 0 and month <= 12 and year > 0:
         days = calendar.monthrange(year, month)

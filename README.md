@@ -23,11 +23,20 @@ Brief, and possibly incomplete at this point:
   (eg, for ubuntu/debian: `sudo apt-get install python-django`)
 * Get the Libravatar python module
   (eg, `sudo pip install pyLibravatar` or `sudo apt-get instal python-libravatar`)
+* Get the djutils module
+  (`sudo pip install djutils`)
 * Clone this repository into a directory somewhere
 * Setup Mailman to output weekly archives with the file format like:
   `<yourmailmanlisturl>Week-of-Mon-20120716.txt`
 * Set up your settings.py as per any other django site
 * Add `'brain',` to the apps in the settings.py
+* Add to the bottom of your settings.py:
+`# Mailman baseurl
+# Remember the trailing slash!
+MAILMAN_BASEURL = 'https://<your whereis mbox>
+
+# Url to get a json response with directory info for alias mapping
+DIRECTORY_JSON = '<url to some json with names, email, phone, etc details).js'`
 * To the bottom of your settings.py, add the <yourmailmanlisturl> portion
   of the above url format. Remember the trailing slash!
 * If you don't want this in debug mode, make that change to settings.py

@@ -60,10 +60,10 @@ def mbox(date_obj, weekday, reply=True):
     urltxt = '%s%s.txt' % (settings.MAILMAN_BASEURL, mon)
 
     try:
-        response = urllib2.urlopen(url)
+        response = urllib2.urlopen(urltxt)
     except:
         try:
-            response = urllib2.urlopen(urltxt)
+            response = urllib2.urlopen(url)
         except:
             return False
     tmpfile = '/tmp/%s.txt' % mon

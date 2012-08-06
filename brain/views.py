@@ -66,13 +66,12 @@ def mbox(date_obj, weekday, reply=True):
             response = urllib2.urlopen(urltxt)
         except:
             return False
-
     tmpfile = '/tmp/%s.txt' % mon
     data = response.read()
 
-    if url.split(".")[-1] == 'tar.gz':
+    try:
         unzipped = GzipFile('', 'r', 0, StringIO(data)).read()
-    else:
+    except:
         unzipped = data
 
     tmp_file = open(tmpfile, 'w')
@@ -281,13 +280,11 @@ def singleday(year, month, day):
     nextday = tomorrow;
     tomorrow = tomorrow.strftime("%Y/%m/%d")
     lastweek = datetime.now() - timedelta(7)
-    today = date.today()
+    now = date.today()
 
     mboxquerycount = Archive.objects.filter(date__contains=d).count()
 
-    if d > today:
-        mboxlist = False
-    elif mboxquerycount < 1:
+    if mboxquerycount < 1:
         mboxlist = mbox(d, dayname)
     else:
         mboxquery = Archive.objects.filter(date__contains=d)
@@ -299,17 +296,21 @@ def singleday(year, month, day):
         for l in rows:
             m(l['fields'])
 
-    if mboxlist == False and d > today:
-        return '<table><tr><th><h1>This date does not appear to be in the mail archive. It either pre-dates it, or has not happened yet</th></tr></h1> '
-    else:
-        return '<table><tr><th><h1>Either this is a weekend day, or nobody mailed whereis...</th></tr></h1> '
-
-    d = d.strftime("%A, %B %d, %Y")
-
     v = []
     a = v.append
     a('<table class="singleday">')
     a('<tr><th colspan="2"><a class="nounder" href="/%s"><</a>&nbsp;%s&nbsp;<a class="nounder" href="/%s">></a></th></tr>' % (yesterday, d, tomorrow))
+
+    if d > now:
+        a('<tr><th><h1>This date has not happened yet</h1><p>Time machines do not exist yet!</p></th></tr>')
+        mboxlist = []
+    elif mboxlist == False:
+        mboxlist = []
+        a('<tr><th><h1>This date predates the archive</h1><p>Time machines do not exist yet!</p></th></tr>')
+    elif len(mboxlist) < 1:
+        a('<tr><th><h1>Either this is a weekend day, or nobody mailed whereis</h1></th></tr>')
+
+    d = d.strftime("%A, %B %d, %Y")
 
     for mboxmail in mboxlist:
         avatar_url = libravatar_url(email = mboxmail['sender'], size = 150)

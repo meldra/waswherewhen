@@ -57,15 +57,24 @@ def mbox(date_obj, weekday, reply=True):
     mon = 'Week-of-Mon-%s' % mon.strftime("%Y%m%d")
 
     url = '%s%s.txt.gz' % (settings.MAILMAN_BASEURL, mon)
+    urltxt = '%s%s.txt' % (settings.MAILMAN_BASEURL, mon)
 
     try:
         response = urllib2.urlopen(url)
     except:
-        return False
+        try:
+            response = urllib2.urlopen(urltxt)
+        except:
+            return False
 
     tmpfile = '/tmp/%s.txt' % mon
     data = response.read()
-    unzipped = GzipFile('', 'r', 0, StringIO(data)).read()
+
+    if url.split(".")[-1] == 'tar.gz':
+        unzipped = GzipFile('', 'r', 0, StringIO(data)).read()
+    else:
+        unzipped = data
+
     tmp_file = open(tmpfile, 'w')
     tmp_file.write(unzipped)
     tmp_file.close()
@@ -272,25 +281,30 @@ def singleday(year, month, day):
     nextday = tomorrow;
     tomorrow = tomorrow.strftime("%Y/%m/%d")
     lastweek = datetime.now() - timedelta(7)
+    today = date.today()
 
     mboxquerycount = Archive.objects.filter(date__contains=d).count()
 
-    if mboxquerycount < 1:
+    if d > today:
+        mboxlist = False
+    elif mboxquerycount < 1:
         mboxlist = mbox(d, dayname)
     else:
         mboxquery = Archive.objects.filter(date__contains=d)
         jsondata = serializers.serialize('json', mboxquery)
         rows = simplejson.loads(jsondata)
-
         mboxlist = []
         m = mboxlist.append
+
         for l in rows:
             m(l['fields'])
 
-    d = d.strftime("%A, %B %d, %Y")
-
-    if mboxlist == False:
+    if mboxlist == False and d > today:
         return '<table><tr><th><h1>This date does not appear to be in the mail archive. It either pre-dates it, or has not happened yet</th></tr></h1> '
+    else:
+        return '<table><tr><th><h1>Either this is a weekend day, or nobody mailed whereis...</th></tr></h1> '
+
+    d = d.strftime("%A, %B %d, %Y")
 
     v = []
     a = v.append

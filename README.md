@@ -36,9 +36,7 @@ Brief, and possibly incomplete at this point:
 
 
 ### WISHLIST FEATURES ###
-* Aliases for different email addresses, etc
-* Detection of when someone mails for someone else
-* Keyword detection to display icons (irc, cell, etc, become icons irc nick/number)
+* Aliases for different email addresses
 * Reply catching/threading
 * Search function
 

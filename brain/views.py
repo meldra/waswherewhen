@@ -545,7 +545,8 @@ def search(request):
 
         if valid == True:
             now = date.today()
-            mbox(d, dayname, False)
+            dayname = now.weekday()
+            mbox(now, dayname, False)
             results = mboxperson(addr)
     except:
         results = ''

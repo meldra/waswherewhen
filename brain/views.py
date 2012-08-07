@@ -102,7 +102,10 @@ def mbox(date_obj, weekday, reply=True):
         maildate = datetime(*email.utils.parsedate(message['date'])[:6])
         bodyexpl = body.split('--')
 
-        archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0])
+        try:
+            archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0])
+        except:
+            continue
 
         if reply == True:
             if maildate.strftime('%b %d %Y') == date_obj.strftime('%b %d %Y'):

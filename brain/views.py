@@ -35,13 +35,17 @@ aliascachetimer = date.today()
 @djutils.decorators.async
 def load_data_async(year, month, day):
     global aliascachetimer
+
     try:
         aliascount = Alias.objects.count()
     except:
         raise Exception("The db models have not been sync'd yet. Please sync them first.")
+
     if settings.DIRECTORY_JSON and aliascachetimer < date.today() or settings.DIRECTORY_JSON and aliascount == 0:
         aliascachetimer = resyncaliases()
-    syncmbox(year, month, day)
+        syncmbox()
+
+    connection.close()
 
 def monday(date_obj, weekday):
     day = datetime.combine(date_obj, time())
@@ -271,6 +275,7 @@ def getothers(subject, sender):
                    'select alias from list '
                    'where occurs = 1 order by length(alias);')
     aliaslist = cursor.fetchall()
+    connection.close()
     aliaslist = map(' '.join, aliaslist)
 
     others = []
@@ -295,6 +300,9 @@ def singleday(year, month, day):
     tomorrow = tomorrow.strftime("%Y/%m/%d")
     lastweek = datetime.now() - timedelta(7)
     now = date.today()
+
+    if d == now:
+        mbox(d, dayname, False)
 
     mboxquerycount = Archive.objects.filter(date__contains=d).count()
 
@@ -418,9 +426,9 @@ def resyncaliases():
 
     return date.today()
 
-def syncmbox(year, month, day):
+def syncmbox():
 
-    d = date(year, month, day)
+    d = date.today()
     dayname = d.weekday()
 
     while True:

@@ -29,5 +29,6 @@ class Archive(models.Model):
     sender = models.CharField(max_length=64)
     subject = models.CharField(max_length=200)
     body = models.TextField()
+    others = models.TextField()
     class Meta:
         unique_together = ("date", "sender")

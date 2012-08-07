@@ -12,10 +12,15 @@
 # along with WasWhereWhen.  If not, see <http://www.gnu.org/licenses/>.
 #
 import calendar, mailbox, email.utils, urllib2, simplejson, re, djutils.decorators
+from django import forms
+from django.db.models import Q
+from django.forms.extras.widgets import SelectDateWidget
+from django.forms.fields import DateField, ChoiceField
+from django.core.validators import email_re
 from django.conf import settings
 from django.shortcuts import render_to_response
 from django.template import Template
-from django.utils.html import escape
+from django.utils.html import escape, conditional_escape as esc
 from django.db import connection
 from django.core import serializers
 from brain.models import Person, Alias, Archive
@@ -24,10 +29,10 @@ from dateutil.relativedelta import MO
 from dateutil.rrule import rrule,DAILY
 from calendar import HTMLCalendar
 from itertools import groupby
-from django.utils.html import conditional_escape as esc
 from cStringIO import StringIO
 from gzip import GzipFile
 from libravatar import libravatar_url
+from urllib import unquote
 
 withyear = False
 aliascachetimer = date.today()
@@ -105,15 +110,16 @@ def mbox(date_obj, weekday, reply=True):
         who = who.replace(' at ', '@')
         maildate = datetime(*email.utils.parsedate(message['date'])[:6])
         bodyexpl = body.split('--')
+        others = getothers(subject, who)
 
         try:
-            archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0])
+            archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0], others = others)
         except:
             continue
 
         if reply == True:
             if maildate.strftime('%b %d %Y') == date_obj.strftime('%b %d %Y'):
-                messages.append({'date': message['date'],'sender': who, 'subject': subject, 'body': bodyexpl[0]})
+                messages.append({'date': message['date'],'sender': who, 'subject': subject, 'body': bodyexpl[0], 'others': others})
 
     if reply == True:
         return messages
@@ -473,3 +479,73 @@ def index(request, year=0, month=0, day=0):
 
     return render_to_response('brain/templates/index.html', locals())
 
+class EmailChoices(forms.Form):
+    emails = []
+
+    for person in Person.objects.all():
+        emails.append([person.individual, person.individual])
+
+    email = forms.ChoiceField(choices=emails, label='')
+
+def mboxperson(person):
+
+    mboxquery = Archive.objects.filter(Q(sender=person) | Q(others__contains=person)).order_by('-date')
+    jsondata = serializers.serialize('json', mboxquery)
+    rows = simplejson.loads(jsondata)
+    mboxlist = []
+    m = mboxlist.append
+
+    for l in rows:
+       m(l['fields'])
+
+    v = []
+    a = v.append
+    a('<table class="singleday">')
+    a('<tr><th colspan="2">%s</th></tr>' % (person))
+
+    if len(mboxlist) < 1:
+        a('<tr><th><h1>Nothing in the whereis archives for this person</h1></th></tr>')
+
+    for mboxmail in mboxlist:
+        avatar_url = libravatar_url(email = mboxmail['sender'], size = 150)
+
+        if settings.DIRECTORY_JSON:
+
+            try:
+                tagstring = gettags(mboxmail['sender'], mboxmail['body'])
+                tagstring = ' | '.join(tagstring)
+            except:
+                tagstring = ''
+
+            try:
+                others = getothers(mboxmail['subject'], mboxmail['sender'])
+            except:
+                others = ''
+        else:
+            tagstring = others = ''
+
+        if len(others) > 0:
+            others = 'Possible mentions:<br/>%s' % others
+
+        a('<tr><td class="headers"><p class="subject">%s</p><img src="%s"><p class="hilight">%s</p><p>%s</p></td><td class="what">%s<br/><br/>%s</td></tr>' % (mboxmail['subject'], avatar_url, others, mboxmail['date'], taghilight(mboxmail['body']), tagstring))
+
+    a('</table>')
+
+    return '\n'.join(v)
+
+def is_valid_email(email):
+    return True if email_re.match(email) else False
+
+def search(request):
+    search = EmailChoices(auto_id=False)
+
+    try:
+        addr = unquote(request.GET['email'])
+        valid = is_valid_email(addr)
+
+        if valid == True:
+            results = mboxperson(addr)
+    except:
+        results = ''
+
+    return render_to_response('search.html', locals())

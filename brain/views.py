@@ -544,6 +544,8 @@ def search(request):
         valid = is_valid_email(addr)
 
         if valid == True:
+            now = date.today()
+            mbox(d, dayname, False)
             results = mboxperson(addr)
     except:
         results = ''

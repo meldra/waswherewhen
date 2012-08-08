@@ -114,7 +114,12 @@ def mbox(date_obj, weekday, reply=True):
         others = getothers(subject, who)
 
         try:
-            archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0], others = others)
+            try:
+                archive = Archive.objects.get_or_create(date = maildate, sender = who, subject = subject, body = bodyexpl[0], others = others)
+            except:
+                archive = Archive.objects.get(date = maildate, sender = who, subject = subject, body = bodyexpl[0])
+                archive.others = others
+                archive.save()
         except:
             continue
 

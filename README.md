@@ -17,6 +17,8 @@ WasWhereWhen - Whereis mailing list mbox formatter
 
 ### INSTALL INSTRUCTIONS ###
 
+* A database that supports "WITH" queries, eg, postgres 8.4
+
 Brief, and possibly incomplete at this point:
 
 * Install django as per your operating system's instructions

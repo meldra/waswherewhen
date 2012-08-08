@@ -272,6 +272,15 @@ def taghilight(body):
 def getothers(subject, sender):
 
     subject = ' %s ' % subject.lower()
+    subject = re.sub('will', '', subject)
+    subject = re.sub('tomorrow', '', subject)
+    firstname = Alias.objects.filter(person=sender, type='first_name')
+
+    try:
+        subject = subject.replace( firstname[0].alias, '' )
+    except:
+        pass
+
     cursor = connection.cursor()
     cursor.execute('with list as '
                    '(select a.id, a.alias, '
@@ -279,7 +288,7 @@ def getothers(subject, sender):
                    'as cnt from brain_alias a2 where a2.alias = a.alias) '
                    'as occurs from brain_alias a) '
                    'select alias from list '
-                   'where occurs = 1 order by length(alias);')
+                   'where occurs = 1 order by length(alias) desc;')
     aliaslist = cursor.fetchall()
     connection.close()
     aliaslist = map(' '.join, aliaslist)
@@ -288,6 +297,7 @@ def getothers(subject, sender):
     o = others.append
     for alias in aliaslist:
         if subject.find(alias) > 0:
+            subject = subject.replace(alias, '')
             matchq = Alias.objects.filter( alias = alias )
             match = matchq[0].person_id
             if match != sender:

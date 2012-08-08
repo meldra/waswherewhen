@@ -1,0 +1,18 @@
+[
+   {
+      "mobile" : "555-0100",
+      "email" : "jill@example.com",
+      "home" : "555-0101",
+      "irc_nick" : "jilly",
+      "surname" : "Hill",
+      "first_name" : "Jill",
+   },
+   {
+      "mobile" : "555-0102",
+      "email" : "jack@example.com",
+      "home" : "555-0103",
+      "irc_nick" : "jacko",
+      "surname" : "Hill",
+      "first_name" : "Jack",
+   }
+]

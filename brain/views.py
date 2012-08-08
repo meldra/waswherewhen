@@ -406,7 +406,7 @@ def resyncaliases():
                 alias.alias = surname_initial_space.lower()
                 alias.save()
 
-        if j['irc_nick']:
+        if j['irc_nick'] and j['irc_nick'].lower() != j['first_name'].lower():
             try:
                 alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['irc_nick'], type = 'irc_nick')
             except:

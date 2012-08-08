@@ -102,9 +102,10 @@ def mbox(date_obj, weekday, reply=True):
 
     for message in mbox:
         body = parse_mbox(message).replace('\n','<br />\n')
-        subject = email.header.decode_header(message['subject'])
-        subject = subject[0][0]
+        subject = message['subject']
         subject = escape(subject.replace('[Whereis] ', ''))
+        subject = email.header.decode_header(subject)
+        subject = subject[0][0]
         who = message['from'].split('(')
         who = who[0].strip()
         who = who.replace(' at ', '@')
@@ -226,6 +227,7 @@ def gettags(email, body):
 
     if body.lower().find('phone') > 0:
         mobile = True;
+        home = True;
 
     if body.lower().find('home phone') > 0:
         home = True;
@@ -272,14 +274,21 @@ def taghilight(body):
 def getothers(subject, sender):
 
     subject = ' %s ' % subject.lower()
-    subject = re.sub('will', '', subject)
-    subject = re.sub('tomorrow', '', subject)
     firstname = Alias.objects.filter(person=sender, type='first_name')
-
     try:
-        subject = subject.replace( firstname[0].alias, '' )
+        subject = re.sub( firstname[0].alias, '' )
     except:
         pass
+
+    words = ['will', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+
+    for w in words:
+        subject = re.sub(
+            re.escape(w),
+            ur'',
+            subject,
+            flags=re.IGNORECASE)
+
 
     cursor = connection.cursor()
     cursor.execute('with list as '

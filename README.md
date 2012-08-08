@@ -33,12 +33,13 @@ Brief, and possibly incomplete at this point:
 * Set up your settings.py as per any other django site
 * Add `'brain',` to the apps in the settings.py
 * Add to the bottom of your settings.py:
-`# Mailman baseurl
-# Remember the trailing slash!
-MAILMAN_BASEURL = 'https://<your whereis mbox>
 
-# Url to get a json response with directory info for alias mapping
-DIRECTORY_JSON = '<url to some json with names, email, phone, etc details).js'`
+ * Mailman baseurl Remember the trailing slash!
+`MAILMAN_BASEURL = 'https://<your whereis mbox>`
+
+ * Url to get a json response with directory info for alias mapping
+`DIRECTORY_JSON = '<url to some json with names, email, phone, etc details).js'`
+
 * To the bottom of your settings.py, add the <yourmailmanlisturl> portion
   of the above url format. Remember the trailing slash!
 * If you don't want this in debug mode, make that change to settings.py

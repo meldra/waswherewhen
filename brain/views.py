@@ -455,6 +455,13 @@ def syncmbox():
 
     return True
 
+def getnavigation(year=0, month=0):
+    if month == 0:
+        today = date.today()
+        month = today.month
+
+    return '<div><a href="/search">Search</a> - Calendars: <a href="/%s">Year</a> | <a href="/%s/%s">Month</a></div>' % (str(year), str(year), str(month))
+
 def index(request, year=0, month=0, day=0):
     now = datetime.now()
 
@@ -471,7 +478,6 @@ def index(request, year=0, month=0, day=0):
 
     if month > 0 and month <= 12 and year > 0:
         days = calendar.monthrange(year, month)
-
     if days and day > 0 and day <= days[1]:
         dayCal = singleday(year, month, day)
     elif month > 0 and month <=12:
@@ -486,6 +492,8 @@ def index(request, year=0, month=0, day=0):
         yearCal = cal.formatyear(now.year, 4)
         nextyear = now.year+1
         prevyear = now.year-1
+
+    navigation = getnavigation(year, month)
 
     return render_to_response('brain/templates/index.html', locals())
 
@@ -560,5 +568,8 @@ def search(request):
             results = mboxperson(addr)
     except:
         results = ''
+
+    now = date.today()
+    navigation = getnavigation(now.strftime('%Y'), now.strftime('%m'))
 
     return render_to_response('search.html', locals())

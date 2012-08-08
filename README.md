@@ -17,6 +17,8 @@ WasWhereWhen - Whereis mailing list mbox formatter
 
 ### INSTALL INSTRUCTIONS ###
 
+Requirements:
+
 * A database that supports "WITH" queries, eg, postgres 8.4
 
 Brief, and possibly incomplete at this point:
@@ -50,7 +52,6 @@ Brief, and possibly incomplete at this point:
 ### WISHLIST FEATURES ###
 * Aliases for different email addresses
 * Reply catching/threading
-* Search function
 
 Novelty:
 * Heatmap on calendar views

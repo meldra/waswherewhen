@@ -278,14 +278,17 @@ def taghilight(body):
 
 def getothers(subject, sender):
 
-    subject = ' %s ' % subject.lower()
+    subject = ' %s %s ' % (subject.lower(), sender.lower())
+    subject = re.sub('\n', '', subject)
     firstname = Alias.objects.filter(person=sender, type='first_name')
+
     try:
-        subject = re.sub( firstname[0].alias, '' )
+        subject = re.sub( firstname[0].alias, '', subject )
     except:
         pass
 
-    words = ['will', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    words = ['will be', 'will not', 'will do', 'will make', 'will work', 'will spare', 'will clear', 'will bring', 'will finish', 'where will',
+             'today', 'tomorrow', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
     for w in words:
         subject = re.sub(
@@ -316,6 +319,8 @@ def getothers(subject, sender):
             match = matchq[0].person_id
             if match != sender:
                 o(match)
+
+    others = list(set(others))
 
     return ' '.join(others)
 
@@ -430,7 +435,12 @@ def resyncaliases():
                 alias.alias = surname_initial_space.lower()
                 alias.save()
 
-        if j['irc_nick'] and j['irc_nick'].lower() != j['first_name'].lower():
+        if surname_initial:
+            comparesurname = surname_initial
+        else:
+             comparesurname = ''
+
+        if j['irc_nick'] and j['irc_nick'].lower() != j['first_name'].lower() and j['irc_nick'].lower() != comparesurname.lower():
             try:
                 alias = Alias.objects.get_or_create(person_id = j['email'], alias = j['irc_nick'], type = 'irc_nick')
             except:

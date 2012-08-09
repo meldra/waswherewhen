@@ -480,11 +480,14 @@ def syncmbox():
     return True
 
 def getnavigation(year=0, month=0):
+    today = date.today()
+
     if month == 0:
-        today = date.today()
         month = today.month
 
-    return '<div><a href="/search">Search</a> - Calendars: <a href="/%s">Year</a> | <a href="/%s/%s">Month</a></div>' % (str(year), str(year), str(month))
+    day = '%s/%s/%s' % (today.year, today.month, today.day)        
+
+    return '<div><a href="/search">Search</a> - Calendars: <a href="/%s">Year</a> | <a href="/%s/%s">Month</a>  - <a href="/%s">Today</a></div>' % (str(year), str(year), str(month), day)
 
 def index(request, year=0, month=0, day=0):
     now = datetime.now()

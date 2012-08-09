@@ -344,7 +344,7 @@ def singleday(year, month, day):
     if mboxquerycount < 1:
         mboxlist = mbox(d, dayname)
     else:
-        mboxquery = Archive.objects.filter(date__contains=d)
+        mboxquery = Archive.objects.filter(date__contains=d).order_by('date')
         jsondata = serializers.serialize('json', mboxquery)
         rows = simplejson.loads(jsondata)
         mboxlist = []

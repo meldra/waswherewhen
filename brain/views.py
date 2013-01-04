@@ -532,7 +532,7 @@ class EmailChoices(forms.Form):
 
     email = forms.ChoiceField(choices=emails, label='')
 
-def mboxperson(person):
+def mboxperson(person, json=False):
 
     mboxquery = Archive.objects.filter(Q(sender=person) | Q(others__contains=person)).order_by('-date')
     jsondata = serializers.serialize('json', mboxquery)
@@ -542,6 +542,9 @@ def mboxperson(person):
 
     for l in rows:
        m(l['fields'])
+
+    if json == True:
+        return mboxlist
 
     v = []
     a = v.append
@@ -585,6 +588,11 @@ def search(request):
     search = EmailChoices(auto_id=False)
 
     try:
+        format = request.GET['format']
+    except:
+        format = ''
+
+    try:
         addr = unquote(request.GET['email'])
         valid = is_valid_email(addr)
 
@@ -592,11 +600,19 @@ def search(request):
             now = date.today()
             dayname = now.weekday()
             mbox(now, dayname, False)
-            results = mboxperson(addr)
+
+            if format == 'json':
+                results = mboxperson(addr, True)
+            else:
+                results = mboxperson(addr)
+
     except:
         results = ''
 
     now = date.today()
     navigation = getnavigation(now.strftime('%Y'), now.strftime('%m'))
 
-    return render_to_response('search.html', locals())
+    if format == 'json':
+        return render_to_response('searchjson.html', locals())
+    else:
+        return render_to_response('search.html', locals())

@@ -627,6 +627,6 @@ def search(request):
     navigation = getnavigation(now.strftime('%Y'), now.strftime('%m'))
 
     if format == 'json':
-        return HttpResponse(results, mimetype="application/json")
+        return HttpResponse(simplejson.dumps(results), mimetype="application/json")
     else:
         return render_to_response('search.html', locals())

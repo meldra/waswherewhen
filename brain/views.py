@@ -12,6 +12,7 @@
 # along with WasWhereWhen.  If not, see <http://www.gnu.org/licenses/>.
 #
 import calendar, mailbox, email.utils, urllib2, simplejson, re, djutils.decorators
+from django.http import HttpResponse
 from django import forms
 from django.db.models import Q
 from django.forms.extras.widgets import SelectDateWidget
@@ -613,6 +614,6 @@ def search(request):
     navigation = getnavigation(now.strftime('%Y'), now.strftime('%m'))
 
     if format == 'json':
-        return render_to_response('searchjson.html', locals())
+        return HttpResponse(results, mimetype="application/json")
     else:
         return render_to_response('search.html', locals())

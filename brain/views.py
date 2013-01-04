@@ -533,16 +533,20 @@ class EmailChoices(forms.Form):
 
     email = forms.ChoiceField(choices=emails, label='')
 
-def mboxperson(person, json=False):
+def mboxperson(person, json=False, limit=0):
 
     mboxquery = Archive.objects.filter(Q(sender=person) | Q(others__contains=person)).order_by('-date')
+
+    if limit > 0:
+        mboxquery = mboxquery[:limit]
+
     jsondata = serializers.serialize('json', mboxquery)
     rows = simplejson.loads(jsondata)
     mboxlist = []
     m = mboxlist.append
 
     for l in rows:
-       m(l['fields'])
+        m(l['fields'])
 
     if json == True:
         return mboxlist
@@ -594,16 +598,25 @@ def search(request):
         format = ''
 
     try:
-        addr = unquote(request.GET['email'])
-        valid = is_valid_email(addr)
+        limit = int(request.GET['limit'])
+    except:
+        limit = 0
 
-        if valid == True:
+    try:
+        addr = unquote(request.GET['email'])
+        validaddr = is_valid_email(addr)
+        validint = isinstance(limit, int)
+
+        if validaddr == True and validint == True:
             now = date.today()
             dayname = now.weekday()
             mbox(now, dayname, False)
 
             if format == 'json':
-                results = mboxperson(addr, True)
+                if limit > 0:
+                    results = mboxperson(addr, True, limit)
+                else:
+                    results = mboxperson(addr, True)
             else:
                 results = mboxperson(addr)
 

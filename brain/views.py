@@ -638,13 +638,10 @@ def search(request):
             dayname = now.weekday()
             mbox(now, dayname, False)
 
-            if format != '':
-                if limit > 0:
+            if limit > 0:
                     results = mboxperson(addr, format, limit)
-                else:
-                    results = mboxperson(addr, format)
             else:
-                results = mboxperson(addr)
+                results = mboxperson(addr, format)
 
     except:
         results = ''

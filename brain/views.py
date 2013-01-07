@@ -553,7 +553,7 @@ def mboxperson(person, format=False, limit=0):
     if format == 'json':
         return mboxlist
 
-    if format == 'xml':
+    if format == 'rss2':
         feed = feedgenerator.Rss201rev2Feed(
             language="en",
             author_name="Was Where When",
@@ -619,7 +619,7 @@ def search(request):
     except:
         format = ''
 
-    if format != 'xml' and format != 'json':
+    if format != 'rss2' and format != 'json':
         format = ''
 
     try:
@@ -651,7 +651,7 @@ def search(request):
 
     if format == 'json':
         return HttpResponse(simplejson.dumps(results), mimetype="application/json")
-    elif format == 'xml':
-        return HttpResponse(results, mimetype="application/rss+xml")
+    elif format == 'rss2':
+        return HttpResponse(results, mimetype="application/rss2+xml")
     else:
         return render_to_response('search.html', locals())

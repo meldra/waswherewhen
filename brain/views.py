@@ -11,7 +11,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with WasWhereWhen.  If not, see <http://www.gnu.org/licenses/>.
 #
-import calendar, mailbox, email.utils, urllib2, simplejson, re, djutils.decorators
+import calendar, mailbox, email.utils, urllib2, simplejson, re, djutils.decorators, pprint
+import webhelpers.feedgenerator as feedgenerator
 from django.http import HttpResponse
 from django import forms
 from django.db.models import Q
@@ -533,23 +534,44 @@ class EmailChoices(forms.Form):
 
     email = forms.ChoiceField(choices=emails, label='')
 
-def mboxperson(person, json=False, limit=0):
+def mboxperson(person, format=False, limit=0):
 
     mboxquery = Archive.objects.filter(Q(sender=person) | Q(others__contains=person)).order_by('-date')
 
     if limit > 0:
         mboxquery = mboxquery[:limit]
 
-    jsondata = serializers.serialize('json', mboxquery)
-    rows = simplejson.loads(jsondata)
+    mboxdata = serializers.serialize('json', mboxquery)
+
+    rows = simplejson.loads(mboxdata)
     mboxlist = []
     m = mboxlist.append
 
     for l in rows:
         m(l['fields'])
 
-    if json == True:
+    if format == 'json':
         return mboxlist
+
+    if format == 'xml':
+        feed = feedgenerator.Rss201rev2Feed(
+            language="en",
+            author_name="Was Where When",
+            link=u"%s" % settings.MAILMAN_BASEURL,
+            title=u"Whereis Mailing List",
+            description=u"Telling the whole company how crappy we feel",
+        )
+
+        for mboxmail in mboxlist:
+            feed.add_item(
+                pubDate='%s' % mboxmail['date'],
+                link=u"%s" % settings.MAILMAN_BASEURL,
+                title=u"%s" % mboxmail['subject'],
+                author_email="%s" % mboxmail['sender'],
+                description=u"%s" % taghilight(mboxmail['body'])
+            )
+
+        return feed.writeString('utf8')
 
     v = []
     a = v.append
@@ -597,8 +619,12 @@ def search(request):
     except:
         format = ''
 
+    if format != 'xml' and format != 'json':
+        format = ''
+
     try:
         limit = int(request.GET['limit'])
+
     except:
         limit = 0
 
@@ -612,11 +638,11 @@ def search(request):
             dayname = now.weekday()
             mbox(now, dayname, False)
 
-            if format == 'json':
+            if format != '':
                 if limit > 0:
-                    results = mboxperson(addr, True, limit)
+                    results = mboxperson(addr, format, limit)
                 else:
-                    results = mboxperson(addr, True)
+                    results = mboxperson(addr, format)
             else:
                 results = mboxperson(addr)
 
@@ -628,5 +654,7 @@ def search(request):
 
     if format == 'json':
         return HttpResponse(simplejson.dumps(results), mimetype="application/json")
+    elif format == 'xml':
+        return HttpResponse(results, mimetype="application/rss+xml")
     else:
         return render_to_response('search.html', locals())
